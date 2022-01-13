@@ -673,13 +673,20 @@ storage:
         [http.routers]
           [http.routers.forem]
             entrypoints= ["web", "websecure"]
-            rule = "Host(`{{ app_domain }}`) && Method(`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`)"
+            rule = "(Host(`{{ app_domain }}`) || Host(`www.{{ app_domain }}`)) && Method(`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`)"
             service = "forem"
-            middlewares = ["security"]
+            middlewares = ["security", "redirect-www-to-non-www"]
             [http.routers.forem.tls]
               certResolver = "forem"
+              [[http.routers.forem.tls.domains]]
+                 main = "{{ app_domain }}"
+                 sans = ["www.{{ app_domain }}"]
 
         [http.middlewares]
+            [http.middlewares.redirect-www-to-non-www.redirectRegex]
+              regex = "^https://www\\.(.+)"
+              replacement = "https://$1"
+              permanent = true
           [http.middlewares.security.headers]
             AccessControlAllowMethods = ["CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
             AccessControlAllowOrigin = "origin-list-or-null"
